@@ -8,8 +8,9 @@ import (
 	"log/slog"
 
 	"github.com/adrg/frontmatter"
-	"github.com/wyvernzora/chunky/pkg/log"
-	pkg "github.com/wyvernzora/chunky/pkg/parser"
+	cctx "github.com/wyvernzora/chunky/pkg/context"
+	cfm "github.com/wyvernzora/chunky/pkg/frontmatter"
+	"github.com/wyvernzora/chunky/pkg/section"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	gparser "github.com/yuin/goldmark/parser"
@@ -24,39 +25,49 @@ import (
 //  3. Walk the AST to identify heading locations, levels, and titles
 //  4. Fold the headings and intervening text into a nested Section structure
 //
+// The root section title is derived from context using chunkyctx.FileInfoFrom().
+// If no FileInfo is present in context, the title defaults to "Untitled".
+//
 // Each call creates a fresh internal worker instance, making the function
 // safe for concurrent use.
-func DefaultParser(ctx context.Context, title string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
+func DefaultParser(ctx context.Context, markdown []byte) (*section.Section, cfm.FrontMatter, error) {
 	w := &worker{ctx: ctx}
-	return w.parse(title, markdown)
+	return w.parse(markdown)
 }
 
 // worker is the internal parser implementation that holds state during parsing.
 type worker struct {
 	ctx    context.Context
-	src    []byte         // source bytes (frontmatter removed)
-	doc    ast.Node       // goldmark AST root
-	spans  []headingSpan  // ordered headings extracted from AST
-	cursor int            // current byte position during section folding
-	stack  []sectionFrame // section stack for nesting logic
-	root   *pkg.Section   // final parsed section tree
+	src    []byte           // source bytes (frontmatter removed)
+	doc    ast.Node         // goldmark AST root
+	spans  []headingSpan    // ordered headings extracted from AST
+	cursor int              // current byte position during section folding
+	stack  []sectionFrame   // section stack for nesting logic
+	root   *section.Section // final parsed section tree
 }
 
-func (w *worker) parse(title string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
-	logger := log.Logger(w.ctx)
+func (w *worker) parse(markdown []byte) (*section.Section, cfm.FrontMatter, error) {
+	logger := cctx.Logger(w.ctx)
+
+	// Derive title from context
+	title := "Untitled"
+	if fi, ok := cctx.FileInfoFrom(w.ctx); ok {
+		title = fi.Title
+	}
+
 	logger.Debug("starting document parse",
 		slog.String("title", title),
 		slog.Int("markdown_size", len(markdown)))
 
 	// 1) extract frontmatter
-	var fm pkg.FrontMatter
+	var fm cfm.FrontMatter
 	body, err := frontmatter.Parse(bytes.NewReader(markdown), &fm)
 	if err != nil {
 		logger.Error("frontmatter parsing failed", slog.Any("error", err))
 		return nil, nil, err
 	}
 	if fm == nil {
-		fm = pkg.EmptyFrontMatter()
+		fm = cfm.EmptyFrontMatter()
 	}
 	w.src = []byte(body)
 	logger.Debug("frontmatter extracted",
@@ -87,7 +98,7 @@ func (w *worker) parse(title string, markdown []byte) (*pkg.Section, pkg.FrontMa
 
 // --- Internal data structures ------------------------------------------------
 
-type sectionFrame struct{ s *pkg.Section }
+type sectionFrame struct{ s *section.Section }
 
 type headingSpan struct {
 	Node  *ast.Heading // goldmark AST node
@@ -115,7 +126,7 @@ func (w *worker) parseDoc() error {
 // --- Stage 2: collect heading spans -----------------------------------------
 
 func (w *worker) extractHeadings() {
-	logger := log.Logger(w.ctx)
+	logger := cctx.Logger(w.ctx)
 	var spans []headingSpan
 
 	ast.Walk(w.doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -181,8 +192,8 @@ func extractInlineText(n ast.Node, src []byte) string {
 // --- Stage 3: fold spans into a Section tree --------------------------------
 
 func (w *worker) fold(docTitle string) error {
-	logger := log.Logger(w.ctx)
-	w.root = pkg.NewRoot(docTitle)
+	logger := cctx.Logger(w.ctx)
+	w.root = section.NewRoot(docTitle)
 	w.stack = []sectionFrame{{s: w.root}}
 	w.cursor = 0
 

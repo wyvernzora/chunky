@@ -1,4 +1,4 @@
-package parser
+package section
 
 // Section represents a Markdown heading section and its associated body content.
 // The root section is synthetic (Level = 0) and represents the entire file.

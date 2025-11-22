@@ -5,7 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	pkg "github.com/wyvernzora/chunky/pkg/parser"
+	chunkyctx "github.com/wyvernzora/chunky/pkg/context"
+	"github.com/wyvernzora/chunky/pkg/section"
 )
 
 func TestParserSimpleDocument(t *testing.T) {
@@ -13,7 +14,8 @@ func TestParserSimpleDocument(t *testing.T) {
 
 This is a simple document.`
 
-	root, fm, err := DefaultParser(context.Background(), "Test Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Test Document"})
+	root, fm, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -67,7 +69,8 @@ Section 1.2 content.
 
 Chapter 2 intro.`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -130,7 +133,8 @@ tags:
 
 This is the introduction.`
 
-	root, fm, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, fm, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -158,7 +162,8 @@ This is the introduction.`
 }
 
 func TestParserEmptyDocument(t *testing.T) {
-	root, fm, err := DefaultParser(context.Background(), "Empty", []byte(""))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Empty"})
+	root, fm, err := DefaultParser(ctx, []byte(""))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -181,7 +186,8 @@ Just some paragraphs of text.
 
 And another one.`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -221,7 +227,8 @@ H5 content
 
 H6 content`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -272,7 +279,8 @@ H3 content
 
 H2 content`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -304,7 +312,8 @@ func TestParserInlineFormatting(t *testing.T) {
 
 Some content here.`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -326,7 +335,8 @@ Content 1`
 Content 2`
 
 	// Parse first document
-	root1, _, err := DefaultParser(context.Background(), "Doc1", []byte(markdown1))
+	ctx1 := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Doc1"})
+	root1, _, err := DefaultParser(ctx1, []byte(markdown1))
 	if err != nil {
 		t.Fatalf("Parse 1 failed: %v", err)
 	}
@@ -335,7 +345,8 @@ Content 2`
 	}
 
 	// Parse second document (each call creates a new worker instance)
-	root2, _, err := DefaultParser(context.Background(), "Doc2", []byte(markdown2))
+	ctx2 := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Doc2"})
+	root2, _, err := DefaultParser(ctx2, []byte(markdown2))
 	if err != nil {
 		t.Fatalf("Parse 2 failed: %v", err)
 	}
@@ -362,7 +373,8 @@ Second content
 
 Third content`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -394,7 +406,8 @@ Text after heading 1.
 
 Text after heading 2.`
 
-	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Document"})
+	root, _, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -455,7 +468,7 @@ func TestSpliceText(t *testing.T) {
 }
 
 func TestParentForLevel(t *testing.T) {
-	root := pkg.NewRoot("Root")
+	root := section.NewRoot("Root")
 	h1 := root.CreateChild("H1", 1, "")
 	h2 := h1.CreateChild("H2", 2, "")
 	h3 := h2.CreateChild("H3", 3, "")
@@ -539,7 +552,8 @@ func TestInlineTextExtraction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			root, _, err := DefaultParser(context.Background(), "Test", []byte(tt.markdown))
+			ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "Test"})
+			root, _, err := DefaultParser(ctx, []byte(tt.markdown))
 			if err != nil {
 				t.Fatalf("Parse failed: %v", err)
 			}
@@ -579,7 +593,8 @@ Second body.
 Trailing line after second H1.
 `
 
-	root, fm, err := DefaultParser(context.Background(), "TestDoc", []byte(markdown))
+	ctx := chunkyctx.WithFileInfo(context.Background(), chunkyctx.FileInfo{Title: "TestDoc"})
+	root, fm, err := DefaultParser(ctx, []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
