@@ -10,8 +10,9 @@ var fiKey fiKeyType
 // It's safe to store in context and provides information about the document
 // being parsed.
 type FileInfo struct {
-	Path  string // File path (full or repo-relative)
-	Title string // Document title derived for the root section
+	Path    string // File path (full or repo-relative)
+	Title   string // Document title derived for the root section
+	Content []byte // Original full content of the file
 }
 
 // WithFileInfo returns a child context carrying file metadata.
