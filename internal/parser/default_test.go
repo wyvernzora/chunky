@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -12,7 +13,7 @@ func TestParserSimpleDocument(t *testing.T) {
 
 This is a simple document.`
 
-	root, fm, err := DefaultParser("Test Document", []byte(markdown))
+	root, fm, err := DefaultParser(context.Background(), "Test Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -66,7 +67,7 @@ Section 1.2 content.
 
 Chapter 2 intro.`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -129,7 +130,7 @@ tags:
 
 This is the introduction.`
 
-	root, fm, err := DefaultParser("Document", []byte(markdown))
+	root, fm, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -157,7 +158,7 @@ This is the introduction.`
 }
 
 func TestParserEmptyDocument(t *testing.T) {
-	root, fm, err := DefaultParser("Empty", []byte(""))
+	root, fm, err := DefaultParser(context.Background(), "Empty", []byte(""))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -180,7 +181,7 @@ Just some paragraphs of text.
 
 And another one.`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -220,7 +221,7 @@ H5 content
 
 H6 content`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -271,7 +272,7 @@ H3 content
 
 H2 content`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -303,7 +304,7 @@ func TestParserInlineFormatting(t *testing.T) {
 
 Some content here.`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -325,7 +326,7 @@ Content 1`
 Content 2`
 
 	// Parse first document
-	root1, _, err := DefaultParser("Doc1", []byte(markdown1))
+	root1, _, err := DefaultParser(context.Background(), "Doc1", []byte(markdown1))
 	if err != nil {
 		t.Fatalf("Parse 1 failed: %v", err)
 	}
@@ -334,7 +335,7 @@ Content 2`
 	}
 
 	// Parse second document (each call creates a new worker instance)
-	root2, _, err := DefaultParser("Doc2", []byte(markdown2))
+	root2, _, err := DefaultParser(context.Background(), "Doc2", []byte(markdown2))
 	if err != nil {
 		t.Fatalf("Parse 2 failed: %v", err)
 	}
@@ -361,7 +362,7 @@ Second content
 
 Third content`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -393,7 +394,7 @@ Text after heading 1.
 
 Text after heading 2.`
 
-	root, _, err := DefaultParser("Document", []byte(markdown))
+	root, _, err := DefaultParser(context.Background(), "Document", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -538,7 +539,7 @@ func TestInlineTextExtraction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			root, _, err := DefaultParser("Test", []byte(tt.markdown))
+			root, _, err := DefaultParser(context.Background(), "Test", []byte(tt.markdown))
 			if err != nil {
 				t.Fatalf("Parse failed: %v", err)
 			}
@@ -578,7 +579,7 @@ Second body.
 Trailing line after second H1.
 `
 
-	root, fm, err := DefaultParser("TestDoc", []byte(markdown))
+	root, fm, err := DefaultParser(context.Background(), "TestDoc", []byte(markdown))
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}

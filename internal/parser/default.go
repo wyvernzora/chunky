@@ -2,10 +2,13 @@ package parser
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/adrg/frontmatter"
+	"github.com/wyvernzora/chunky/pkg/log"
 	pkg "github.com/wyvernzora/chunky/pkg/parser"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -23,13 +26,14 @@ import (
 //
 // Each call creates a fresh internal worker instance, making the function
 // safe for concurrent use.
-func DefaultParser(docTitle string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
-	w := &worker{}
-	return w.parse(docTitle, markdown)
+func DefaultParser(ctx context.Context, title string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
+	w := &worker{ctx: ctx}
+	return w.parse(title, markdown)
 }
 
 // worker is the internal parser implementation that holds state during parsing.
 type worker struct {
+	ctx    context.Context
 	src    []byte         // source bytes (frontmatter removed)
 	doc    ast.Node       // goldmark AST root
 	spans  []headingSpan  // ordered headings extracted from AST
@@ -38,30 +42,45 @@ type worker struct {
 	root   *pkg.Section   // final parsed section tree
 }
 
-func (w *worker) parse(docTitle string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
+func (w *worker) parse(title string, markdown []byte) (*pkg.Section, pkg.FrontMatter, error) {
+	logger := log.Logger(w.ctx)
+	logger.Debug("starting document parse",
+		slog.String("title", title),
+		slog.Int("markdown_size", len(markdown)))
+
 	// 1) extract frontmatter
 	var fm pkg.FrontMatter
 	body, err := frontmatter.Parse(bytes.NewReader(markdown), &fm)
 	if err != nil {
+		logger.Error("frontmatter parsing failed", slog.Any("error", err))
 		return nil, nil, err
 	}
 	if fm == nil {
 		fm = pkg.EmptyFrontMatter()
 	}
 	w.src = []byte(body)
+	logger.Debug("frontmatter extracted",
+		slog.Int("frontmatter_keys", len(fm)),
+		slog.Int("body_size", len(w.src)))
 
 	// 2) parse Markdown AST using goldmark
 	if err := w.parseDoc(); err != nil {
+		logger.Error("markdown AST parsing failed", slog.Any("error", err))
 		return nil, nil, err
 	}
+	logger.Debug("markdown AST parsed")
 
 	// 3) collect heading spans (offsets + titles)
 	w.extractHeadings()
+	logger.Debug("heading spans extracted", slog.Int("heading_count", len(w.spans)))
 
 	// 4) fold spans + raw text into a Section tree
-	if err := w.fold(docTitle); err != nil {
+	if err := w.fold(title); err != nil {
+		logger.Error("section folding failed", slog.Any("error", err))
 		return nil, nil, err
 	}
+	logger.Debug("section tree folded successfully",
+		slog.Int("root_children", len(w.root.Children())))
 
 	return w.root, fm, nil
 }
@@ -96,6 +115,7 @@ func (w *worker) parseDoc() error {
 // --- Stage 2: collect heading spans -----------------------------------------
 
 func (w *worker) extractHeadings() {
+	logger := log.Logger(w.ctx)
 	var spans []headingSpan
 
 	ast.Walk(w.doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -113,13 +133,19 @@ func (w *worker) extractHeadings() {
 		}
 		seg := lines.At(0)
 
+		title := inlineText(h, w.src)
 		spans = append(spans, headingSpan{
 			Node:  h,
 			Start: seg.Start,
 			End:   seg.Stop,
 			Level: h.Level,
-			Title: inlineText(h, w.src),
+			Title: title,
 		})
+		logger.Debug("heading discovered",
+			slog.Int("level", h.Level),
+			slog.String("title", title),
+			slog.Int("start", seg.Start),
+			slog.Int("end", seg.Stop))
 		return ast.WalkContinue, nil
 	})
 
@@ -155,21 +181,32 @@ func extractInlineText(n ast.Node, src []byte) string {
 // --- Stage 3: fold spans into a Section tree --------------------------------
 
 func (w *worker) fold(docTitle string) error {
+	logger := log.Logger(w.ctx)
 	w.root = pkg.NewRoot(docTitle)
 	w.stack = []sectionFrame{{s: w.root}}
 	w.cursor = 0
+
+	logger.Debug("starting section folding", slog.String("root_title", docTitle))
 
 	for i, h := range w.spans {
 		// append pre-heading text to current section
 		if h.Start > w.cursor {
 			pre, next := spliceText(w.src, w.cursor, h.Start)
 			w.stack[len(w.stack)-1].s.AppendContent(pre)
+			logger.Debug("appended pre-heading content",
+				slog.Int("heading_index", i),
+				slog.Int("content_length", len(pre)))
 			w.cursor = next
 		}
 
 		// find parent section for this heading level
 		pi, err := parentForLevel(w.stack, h.Level)
 		if err != nil {
+			logger.Error("failed to find parent section",
+				slog.Int("heading_index", i),
+				slog.String("heading_title", h.Title),
+				slog.Int("heading_level", h.Level),
+				slog.Any("error", err))
 			return fmt.Errorf("invalid section stack at heading %d (%q): %w", i, h.Title, err)
 		}
 
@@ -180,6 +217,11 @@ func (w *worker) fold(docTitle string) error {
 		// create new section under parent
 		sec := parent.CreateChild(h.Title, h.Level, "")
 		w.stack = append(w.stack, sectionFrame{s: sec})
+		logger.Debug("created section",
+			slog.String("title", h.Title),
+			slog.Int("level", h.Level),
+			slog.String("parent", parent.Title()),
+			slog.Int("stack_depth", len(w.stack)))
 
 		// move cursor to end of heading line
 		w.cursor = h.End
@@ -189,6 +231,7 @@ func (w *worker) fold(docTitle string) error {
 	if w.cursor < len(w.src) {
 		pre, _ := spliceText(w.src, w.cursor, len(w.src))
 		w.stack[len(w.stack)-1].s.AppendContent(pre)
+		logger.Debug("appended trailing content", slog.Int("content_length", len(pre)))
 	}
 
 	return nil
