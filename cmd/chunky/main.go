@@ -5,13 +5,18 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/wyvernzora/chunky/internal/cli"
 )
 
 var version = "dev"
 
+// CLI represents the top-level command structure.
+type CLI struct {
+	Run  RunCmd  `cmd:"" help:"Run chunking on files"`
+	Init InitCmd `cmd:"init" help:"Initialize a .chunkyrc configuration file"`
+}
+
 func main() {
-	var c cli.CLI
+	var c CLI
 
 	ctx := kong.Parse(&c,
 		kong.Name("chunky"),
