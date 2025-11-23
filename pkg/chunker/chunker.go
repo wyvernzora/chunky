@@ -113,8 +113,8 @@ func New(opts ...Option) (Chunker, error) {
 			// Default section transforms applied in order
 			sbuiltin.NormalizeNewlinesTransform(),
 			sbuiltin.NormalizeHardWrapsTransform(),
-			sbuiltin.PruneLeadingBlankLinesTransform(0),  // Remove all leading blanks
-			sbuiltin.PruneTrailingBlankLinesTransform(0), // Remove all trailing blanks
+			sbuiltin.PruneLeadingBlankLinesTransform(0),  // Remove all blank lines at the start
+			sbuiltin.PruneTrailingBlankLinesTransform(1), //  Allow at most 1 blank line at the end
 			sbuiltin.CollapseBlankLinesTransform(),
 			sbuiltin.HeadingPrefixTransform(),
 			sbuiltin.HeadingPathCommentTransform(),
