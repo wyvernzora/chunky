@@ -144,10 +144,19 @@ func (w *worker) extractHeadings() {
 		}
 		seg := lines.At(0)
 
+		// Find the actual start of the line (including heading markers like "##")
+		// goldmark's seg.Start points to the first character of the heading text,
+		// not the beginning of the line. We need to scan backwards to find where
+		// the line actually starts (either at a newline or the beginning of the file).
+		lineStart := seg.Start
+		for lineStart > 0 && w.src[lineStart-1] != '\n' {
+			lineStart--
+		}
+
 		title := inlineText(h, w.src)
 		spans = append(spans, headingSpan{
 			Node:  h,
-			Start: seg.Start,
+			Start: lineStart, // Use line start, not text start
 			End:   seg.Stop,
 			Level: h.Level,
 			Title: title,

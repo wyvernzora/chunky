@@ -86,8 +86,8 @@ You're now ready to start using the platform!
 	//
 	// Chunk 1 (docs/guide.md):
 	//   Title: Getting Started Guide
-	//   Tokens: 244
-	//   Text length: 1235 bytes
+	//   Tokens: 221
+	//   Text length: 1164 bytes
 }
 
 func ExampleChunker_withTransforms() {

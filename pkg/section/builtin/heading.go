@@ -13,23 +13,26 @@ import (
 // current section and inserts it as an HTML comment at the very top of
 // section.Content. The format is: <!-- path: Root / Section1 / Section2 -->
 //
+// If the section has no content, this transform does nothing (skips the comment).
+// This typically happens when a section has no body text and no children.
+//
 // If a path comment is already present and matches, it does nothing.
 // If present but stale, it replaces the comment.
 // This transform is idempotent.
 func HeadingPathCommentTransform() section.Transform {
 	return func(ctx context.Context, _ fm.FrontMatterView, s *section.Section) error {
+		content := s.Content()
+
+		// Skip if content is empty or whitespace-only
+		if strings.TrimSpace(content) == "" {
+			return nil
+		}
+
 		// Compute breadcrumb path
 		path := computePath(s)
 		expectedComment := fmt.Sprintf("<!-- path: %s -->\n", path)
 
-		content := s.Content()
 		lines := strings.Split(content, "\n")
-
-		if len(lines) == 0 {
-			// Empty content, just insert the comment
-			s.SetContent(expectedComment)
-			return nil
-		}
 
 		// Check if first line is a path comment
 		firstLine := lines[0]

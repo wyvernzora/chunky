@@ -1,10 +1,14 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/jwalton/gchalk"
+	"github.com/wyvernzora/chunky/pkg/chunker"
 )
 
 // CLI represents the top-level command structure.
@@ -63,8 +67,103 @@ func (r *RunCmd) Run() error {
 	// Print effective configuration
 	printEffectiveConfig(projectRoot, opts, files)
 
-	// TODO: Actual chunking will be implemented later
-	fmt.Println("\n⚠ Chunking not yet implemented - this is a dry run")
+	// Create tokenizer
+	tok, err := createTokenizer(opts.Tokenizer)
+	if err != nil {
+		return fmt.Errorf("failed to create tokenizer: %w", err)
+	}
+
+	// Create header generator
+	headerGen := createHeaderGenerator(opts.Headers)
+
+	// Create chunker
+	c, err := chunker.New(
+		chunker.WithChunkTokenBudget(opts.Budget),
+		chunker.WithReservedOverheadRatio(opts.Overhead),
+		chunker.WithTokenizer(tok),
+		chunker.WithChunkHeader(headerGen),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create chunker: %w", err)
+	}
+
+	// Process all files
+	ctx := context.Background()
+	fmt.Println("\nProcessing files...")
+	for _, file := range files {
+		fmt.Printf("  - %s\n", file)
+		if err := processFile(ctx, projectRoot, file, c); err != nil {
+			return fmt.Errorf("error processing %s: %w", file, err)
+		}
+	}
+
+	// Get chunks
+	chunks := c.Chunks()
+	effectiveBudget := c.EffectiveBudget()
+
+	// Check for jumbo chunks if strict mode is enabled
+	var jumboChunks []chunker.Chunk
+	for _, chunk := range chunks {
+		if chunk.Tokens > effectiveBudget {
+			jumboChunks = append(jumboChunks, chunk)
+		}
+	}
+
+	if len(jumboChunks) > 0 {
+		fmt.Printf("\n⚠ Warning: Found %d jumbo chunk(s) exceeding effective budget of %d tokens:\n", len(jumboChunks), effectiveBudget)
+		for _, chunk := range jumboChunks {
+			fmt.Printf("  - %s (chunk %d): %d tokens\n", chunk.FilePath, chunk.ChunkIndex, chunk.Tokens)
+		}
+		if opts.Strict {
+			return fmt.Errorf("strict mode enabled: aborting due to jumbo chunks")
+		}
+	}
+
+	// Output chunks to stdout
+	fmt.Println()
+	fmt.Println(gchalk.Bold(strings.Repeat("═", 60)))
+	fmt.Println(gchalk.Bold("GENERATED CHUNKS "), gchalk.Dim(fmt.Sprintf("(%d total)", len(chunks))))
+	fmt.Println(gchalk.Bold(strings.Repeat("═", 60)))
+	fmt.Println()
+
+	for i, chunk := range chunks {
+		// Banner
+		banner := gchalk.WithBgBlue().WithWhite().WithBold().Paint(
+			fmt.Sprintf("  CHUNK %d/%d  ", i+1, len(chunks)),
+		)
+		fmt.Println(banner)
+
+		// Source
+		fmt.Println(
+			gchalk.Gray("Source: "),
+			gchalk.White(fmt.Sprintf("%s ", chunk.FilePath)),
+			gchalk.Dim(fmt.Sprintf("(chunk %d/%d)", chunk.ChunkIndex, len(chunks))),
+		)
+
+		// Title (highlight)
+		fmt.Println(
+			gchalk.Gray("Title:  "),
+			gchalk.WithCyan().WithBold().Paint(chunk.FileTitle),
+		)
+
+		// Tokens (color by budget)
+		tokensStr := gchalk.White(fmt.Sprintf("%d", chunk.Tokens))
+		fmt.Println(gchalk.Gray("Tokens: "), tokensStr)
+
+		// Jumbo warning (if any)
+		if chunk.Tokens > effectiveBudget {
+			over := chunk.Tokens - effectiveBudget
+			fmt.Println(
+				gchalk.WithRed().WithBold().Paint("⚠ JUMBO: "),
+				gchalk.WithRed().Paint(fmt.Sprintf("exceeds budget by %d tokens", over)),
+			)
+		}
+
+		// Body (dim)
+		fmt.Println()
+		fmt.Println(gchalk.Dim(chunk.Text))
+		fmt.Println()
+	}
 
 	return nil
 }
@@ -120,8 +219,8 @@ func (i *InitCmd) Run() error {
 
 // validateOptions validates the ChunkyOptions struct.
 func validateOptions(opts *ChunkyOptions) error {
-	if opts.Budget <= 0 {
-		return fmt.Errorf("budget must be positive, got %d", opts.Budget)
+	if opts.Budget < 100 {
+		return fmt.Errorf("budget must be at least 100, got %d", opts.Budget)
 	}
 
 	if opts.Overhead < 0.01 || opts.Overhead > 0.5 {

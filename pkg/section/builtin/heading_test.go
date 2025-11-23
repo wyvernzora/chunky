@@ -15,30 +15,30 @@ func TestHeadingPathCommentTransform(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "root section",
+			name: "empty section - skip comment",
 			setup: func() *section.Section {
 				return section.NewRoot("Root")
 			},
-			expected: "<!-- path: Root -->\n",
+			expected: "",
 		},
 		{
-			name: "nested section",
+			name: "nested empty section - skip comment",
 			setup: func() *section.Section {
 				root := section.NewRoot("Root")
 				child := root.CreateChild("Chapter 1", 1, "")
 				return child
 			},
-			expected: "<!-- path: Root / Chapter 1 -->\n",
+			expected: "",
 		},
 		{
-			name: "deeply nested",
+			name: "deeply nested empty section - skip comment",
 			setup: func() *section.Section {
 				root := section.NewRoot("Root")
 				ch1 := root.CreateChild("Chapter 1", 1, "")
 				sec := ch1.CreateChild("Section 1.1", 2, "")
 				return sec
 			},
-			expected: "<!-- path: Root / Chapter 1 / Section 1.1 -->\n",
+			expected: "",
 		},
 		{
 			name: "with existing content",
