@@ -12,17 +12,17 @@ func TestNewTokenizedSection(t *testing.T) {
 
 	ts := NewTokenizedSection(sec, 10, 10, children)
 
-	if ts.Section != sec {
+	if ts.GetSection() != sec {
 		t.Error("section not set correctly")
 	}
-	if ts.ContentTokens != 10 {
-		t.Errorf("expected ContentTokens 10, got %d", ts.ContentTokens)
+	if ts.GetContentTokens() != 10 {
+		t.Errorf("expected ContentTokens 10, got %d", ts.GetContentTokens())
 	}
-	if ts.SubtreeTokens != 10 {
-		t.Errorf("expected SubtreeTokens 10, got %d", ts.SubtreeTokens)
+	if ts.GetSubtreeTokens() != 10 {
+		t.Errorf("expected SubtreeTokens 10, got %d", ts.GetSubtreeTokens())
 	}
-	if len(ts.Children) != 0 {
-		t.Errorf("expected 0 children, got %d", len(ts.Children))
+	if len(ts.GetChildren()) != 0 {
+		t.Errorf("expected 0 children, got %d", len(ts.GetChildren()))
 	}
 }
 
@@ -33,16 +33,16 @@ func TestNewTokenizedSection_WithChildren(t *testing.T) {
 	child := NewTokenizedSection(childSec, 5, 5, nil)
 	parent := NewTokenizedSection(root, 10, 15, []*TokenizedSection{child})
 
-	if parent.ContentTokens != 10 {
-		t.Errorf("parent ContentTokens: expected 10, got %d", parent.ContentTokens)
+	if parent.GetContentTokens() != 10 {
+		t.Errorf("parent ContentTokens: expected 10, got %d", parent.GetContentTokens())
 	}
-	if parent.SubtreeTokens != 15 {
-		t.Errorf("parent SubtreeTokens: expected 15, got %d", parent.SubtreeTokens)
+	if parent.GetSubtreeTokens() != 15 {
+		t.Errorf("parent SubtreeTokens: expected 15, got %d", parent.GetSubtreeTokens())
 	}
-	if len(parent.Children) != 1 {
-		t.Errorf("expected 1 child, got %d", len(parent.Children))
+	if len(parent.GetChildren()) != 1 {
+		t.Errorf("expected 1 child, got %d", len(parent.GetChildren()))
 	}
-	if parent.Children[0] != child {
+	if parent.GetChildren()[0] != child {
 		t.Error("child reference not preserved")
 	}
 }
@@ -231,7 +231,7 @@ func TestTokenizedSection_Render_UnicodeContent(t *testing.T) {
 }
 
 func TestTokenizedSection_SubtreeTokensInvariant(t *testing.T) {
-	// Test that SubtreeTokens = ContentTokens + sum(children.SubtreeTokens)
+	// Test that SubtreeTokens = ContentTokens + sum(children.GetSubtreeTokens())
 	root := section.NewRoot("root")
 	child1 := root.CreateChild("child1", 1, "")
 	child2 := root.CreateChild("child2", 1, "")
@@ -241,8 +241,8 @@ func TestTokenizedSection_SubtreeTokensInvariant(t *testing.T) {
 	troot := NewTokenizedSection(root, 5, 30, []*TokenizedSection{tc1, tc2})
 
 	// Verify invariant
-	expectedSubtree := troot.ContentTokens + tc1.SubtreeTokens + tc2.SubtreeTokens
-	if troot.SubtreeTokens != expectedSubtree {
-		t.Errorf("subtree invariant violated: expected %d, got %d", expectedSubtree, troot.SubtreeTokens)
+	expectedSubtree := troot.GetContentTokens() + tc1.GetSubtreeTokens() + tc2.GetSubtreeTokens()
+	if troot.GetSubtreeTokens() != expectedSubtree {
+		t.Errorf("subtree invariant violated: expected %d, got %d", expectedSubtree, troot.GetSubtreeTokens())
 	}
 }

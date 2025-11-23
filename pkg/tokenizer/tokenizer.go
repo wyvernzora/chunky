@@ -47,6 +47,11 @@ func (t *tokenizer) Tokenize(ctx context.Context, root *section.Section) (*Token
 	var visit func(*section.Section) (*TokenizedSection, error)
 
 	visit = func(node *section.Section) (*TokenizedSection, error) {
+		// Check for cancellation
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		// Count tokens in *this node's* content
 		content := node.Content()
 		contentTokens, err := t.tokenCounter(content)
@@ -65,15 +70,10 @@ func (t *tokenizer) Tokenize(ctx context.Context, root *section.Section) (*Token
 				return nil, err
 			}
 			tkids = append(tkids, tchild)
-			subtreeTokens += tchild.SubtreeTokens
+			subtreeTokens += tchild.GetSubtreeTokens()
 		}
 
-		return &TokenizedSection{
-			Section:       node,
-			ContentTokens: contentTokens,
-			SubtreeTokens: subtreeTokens,
-			Children:      tkids,
-		}, nil
+		return NewTokenizedSection(node, contentTokens, subtreeTokens, tkids), nil
 	}
 
 	return visit(root)

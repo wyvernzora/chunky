@@ -264,27 +264,27 @@ func TestTiktokenTokenizer_Tokenize(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ContentTokens == 0 {
+	if result.GetContentTokens() == 0 {
 		t.Error("expected non-zero root ContentTokens")
 	}
 
-	if result.SubtreeTokens <= result.ContentTokens {
+	if result.GetSubtreeTokens() <= result.GetContentTokens() {
 		t.Error("SubtreeTokens should be greater than ContentTokens with children")
 	}
 
-	if len(result.Children) != 1 {
-		t.Fatalf("expected 1 child, got %d", len(result.Children))
+	if len(result.GetChildren()) != 1 {
+		t.Fatalf("expected 1 child, got %d", len(result.GetChildren()))
 	}
 
-	if result.Children[0].ContentTokens == 0 {
+	if result.GetChildren()[0].GetContentTokens() == 0 {
 		t.Error("expected non-zero child ContentTokens")
 	}
 
 	// Verify SubtreeTokens invariant
-	expectedSubtree := result.ContentTokens + result.Children[0].SubtreeTokens
-	if result.SubtreeTokens != expectedSubtree {
+	expectedSubtree := result.GetContentTokens() + result.GetChildren()[0].GetSubtreeTokens()
+	if result.GetSubtreeTokens() != expectedSubtree {
 		t.Errorf("SubtreeTokens invariant violated: expected %d, got %d",
-			expectedSubtree, result.SubtreeTokens)
+			expectedSubtree, result.GetSubtreeTokens())
 	}
 }
 

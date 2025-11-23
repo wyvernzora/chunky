@@ -104,14 +104,14 @@ func TestTokenizer_Tokenize_SingleNode(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ContentTokens != 5 {
-		t.Errorf("expected ContentTokens 5, got %d", result.ContentTokens)
+	if result.GetContentTokens() != 5 {
+		t.Errorf("expected ContentTokens 5, got %d", result.GetContentTokens())
 	}
-	if result.SubtreeTokens != 5 {
-		t.Errorf("expected SubtreeTokens 5, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 5 {
+		t.Errorf("expected SubtreeTokens 5, got %d", result.GetSubtreeTokens())
 	}
-	if len(result.Children) != 0 {
-		t.Errorf("expected no children, got %d", len(result.Children))
+	if len(result.GetChildren()) != 0 {
+		t.Errorf("expected no children, got %d", len(result.GetChildren()))
 	}
 }
 
@@ -140,45 +140,45 @@ func TestTokenizer_Tokenize_WithChildren(t *testing.T) {
 	}
 
 	// Root: 5 + (6 + 10) + 4 = 25
-	if result.ContentTokens != 5 {
-		t.Errorf("root ContentTokens: expected 5, got %d", result.ContentTokens)
+	if result.GetContentTokens() != 5 {
+		t.Errorf("root ContentTokens: expected 5, got %d", result.GetContentTokens())
 	}
-	if result.SubtreeTokens != 25 {
-		t.Errorf("root SubtreeTokens: expected 25, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 25 {
+		t.Errorf("root SubtreeTokens: expected 25, got %d", result.GetSubtreeTokens())
 	}
 
-	if len(result.Children) != 2 {
-		t.Fatalf("expected 2 children, got %d", len(result.Children))
+	if len(result.GetChildren()) != 2 {
+		t.Fatalf("expected 2 children, got %d", len(result.GetChildren()))
 	}
 
 	// Child1: 6 + 10 = 16
-	child1Result := result.Children[0]
-	if child1Result.ContentTokens != 6 {
-		t.Errorf("child1 ContentTokens: expected 6, got %d", child1Result.ContentTokens)
+	child1Result := result.GetChildren()[0]
+	if child1Result.GetContentTokens() != 6 {
+		t.Errorf("child1 ContentTokens: expected 6, got %d", child1Result.GetContentTokens())
 	}
-	if child1Result.SubtreeTokens != 16 {
-		t.Errorf("child1 SubtreeTokens: expected 16, got %d", child1Result.SubtreeTokens)
+	if child1Result.GetSubtreeTokens() != 16 {
+		t.Errorf("child1 SubtreeTokens: expected 16, got %d", child1Result.GetSubtreeTokens())
 	}
 
 	// Grandchild: 10
-	if len(child1Result.Children) != 1 {
-		t.Fatalf("expected 1 grandchild, got %d", len(child1Result.Children))
+	if len(child1Result.GetChildren()) != 1 {
+		t.Fatalf("expected 1 grandchild, got %d", len(child1Result.GetChildren()))
 	}
-	grandchild := child1Result.Children[0]
-	if grandchild.ContentTokens != 10 {
-		t.Errorf("grandchild ContentTokens: expected 10, got %d", grandchild.ContentTokens)
+	grandchild := child1Result.GetChildren()[0]
+	if grandchild.GetContentTokens() != 10 {
+		t.Errorf("grandchild ContentTokens: expected 10, got %d", grandchild.GetContentTokens())
 	}
-	if grandchild.SubtreeTokens != 10 {
-		t.Errorf("grandchild SubtreeTokens: expected 10, got %d", grandchild.SubtreeTokens)
+	if grandchild.GetSubtreeTokens() != 10 {
+		t.Errorf("grandchild SubtreeTokens: expected 10, got %d", grandchild.GetSubtreeTokens())
 	}
 
 	// Child2: 4
-	child2Result := result.Children[1]
-	if child2Result.ContentTokens != 4 {
-		t.Errorf("child2 ContentTokens: expected 4, got %d", child2Result.ContentTokens)
+	child2Result := result.GetChildren()[1]
+	if child2Result.GetContentTokens() != 4 {
+		t.Errorf("child2 ContentTokens: expected 4, got %d", child2Result.GetContentTokens())
 	}
-	if child2Result.SubtreeTokens != 4 {
-		t.Errorf("child2 SubtreeTokens: expected 4, got %d", child2Result.SubtreeTokens)
+	if child2Result.GetSubtreeTokens() != 4 {
+		t.Errorf("child2 SubtreeTokens: expected 4, got %d", child2Result.GetSubtreeTokens())
 	}
 }
 
@@ -197,11 +197,11 @@ func TestTokenizer_Tokenize_EmptyContent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ContentTokens != 0 {
-		t.Errorf("expected ContentTokens 0, got %d", result.ContentTokens)
+	if result.GetContentTokens() != 0 {
+		t.Errorf("expected ContentTokens 0, got %d", result.GetContentTokens())
 	}
-	if result.SubtreeTokens != 0 {
-		t.Errorf("expected SubtreeTokens 0, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 0 {
+		t.Errorf("expected SubtreeTokens 0, got %d", result.GetSubtreeTokens())
 	}
 }
 
@@ -274,8 +274,8 @@ func TestTokenizer_Tokenize_DeepTree(t *testing.T) {
 	}
 
 	// Should have 6 nodes total (root + 5 children)
-	if result.SubtreeTokens != 6 {
-		t.Errorf("expected SubtreeTokens 6, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 6 {
+		t.Errorf("expected SubtreeTokens 6, got %d", result.GetSubtreeTokens())
 	}
 }
 
@@ -300,12 +300,12 @@ func TestTokenizer_Tokenize_WideTree(t *testing.T) {
 	}
 
 	// Should have 11 nodes total (root + 10 children)
-	if result.SubtreeTokens != 11 {
-		t.Errorf("expected SubtreeTokens 11, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 11 {
+		t.Errorf("expected SubtreeTokens 11, got %d", result.GetSubtreeTokens())
 	}
 
-	if len(result.Children) != 10 {
-		t.Errorf("expected 10 children, got %d", len(result.Children))
+	if len(result.GetChildren()) != 10 {
+		t.Errorf("expected 10 children, got %d", len(result.GetChildren()))
 	}
 }
 
@@ -326,24 +326,24 @@ func TestTokenizer_Tokenize_PreservesStructure(t *testing.T) {
 	}
 
 	// Verify section references are preserved
-	if result.Section != root {
+	if result.GetSection() != root {
 		t.Error("root section reference not preserved")
 	}
 
-	if len(result.Children) != 1 {
-		t.Fatalf("expected 1 child, got %d", len(result.Children))
+	if len(result.GetChildren()) != 1 {
+		t.Fatalf("expected 1 child, got %d", len(result.GetChildren()))
 	}
 
-	if result.Children[0].Section != child {
+	if result.GetChildren()[0].GetSection() != child {
 		t.Error("child section reference not preserved")
 	}
 
 	// Verify titles are accessible
-	if result.Section.Title() != "Root Title" {
-		t.Errorf("expected root title 'Root Title', got %q", result.Section.Title())
+	if result.GetSection().Title() != "Root Title" {
+		t.Errorf("expected root title 'Root Title', got %q", result.GetSection().Title())
 	}
 
-	if result.Children[0].Section.Title() != "Child Title" {
-		t.Errorf("expected child title 'Child Title', got %q", result.Children[0].Section.Title())
+	if result.GetChildren()[0].GetSection().Title() != "Child Title" {
+		t.Errorf("expected child title 'Child Title', got %q", result.GetChildren()[0].GetSection().Title())
 	}
 }

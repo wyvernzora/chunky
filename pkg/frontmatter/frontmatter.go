@@ -1,6 +1,11 @@
 package frontmatter
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+
+	"gopkg.in/yaml.v2"
+)
 
 // FrontMatter is a map of YAML frontmatter key-value pairs extracted from
 // a Markdown document header.
@@ -72,4 +77,27 @@ func deepCopyJSON(v any) any {
 	var out any
 	_ = json.Unmarshal(b, &out)
 	return out
+}
+
+// Serialize converts frontmatter to a YAML block string suitable for markdown.
+// Returns a string in the format "---\nkey: value\n---\n" or empty string if no data.
+//
+// Example output:
+//
+//	---
+//	title: My Document
+//	author: John Doe
+//	---
+func Serialize(fm FrontMatter) (string, error) {
+	if len(fm) == 0 {
+		return "", nil
+	}
+
+	yamlBytes, err := yaml.Marshal(fm)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal frontmatter to YAML: %w", err)
+	}
+
+	// Wrap in YAML frontmatter delimiters
+	return fmt.Sprintf("---\n%s---\n", string(yamlBytes)), nil
 }

@@ -169,21 +169,21 @@ func TestCharCountTokenizer_Tokenize(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ContentTokens != 2 {
-		t.Errorf("root ContentTokens: expected 2, got %d", result.ContentTokens)
+	if result.GetContentTokens() != 2 {
+		t.Errorf("root ContentTokens: expected 2, got %d", result.GetContentTokens())
 	}
 
 	// Root: 2 + 3 = 5 total
-	if result.SubtreeTokens != 5 {
-		t.Errorf("root SubtreeTokens: expected 5, got %d", result.SubtreeTokens)
+	if result.GetSubtreeTokens() != 5 {
+		t.Errorf("root SubtreeTokens: expected 5, got %d", result.GetSubtreeTokens())
 	}
 
-	if len(result.Children) != 1 {
-		t.Fatalf("expected 1 child, got %d", len(result.Children))
+	if len(result.GetChildren()) != 1 {
+		t.Fatalf("expected 1 child, got %d", len(result.GetChildren()))
 	}
 
-	if result.Children[0].ContentTokens != 3 {
-		t.Errorf("child ContentTokens: expected 3, got %d", result.Children[0].ContentTokens)
+	if result.GetChildren()[0].GetContentTokens() != 3 {
+		t.Errorf("child ContentTokens: expected 3, got %d", result.GetChildren()[0].GetContentTokens())
 	}
 }
 

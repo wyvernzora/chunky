@@ -14,21 +14,23 @@ import (
 //   - ContentTokens represents tokens in Section.Content() only
 //   - SubtreeTokens = ContentTokens + sum of all children's SubtreeTokens
 //   - SubtreeTokens >= ContentTokens
+//
+// All fields are read-only after construction to maintain token count invariants.
 type TokenizedSection struct {
-	// Section is the original section node this TokenizedSection represents.
-	Section *section.Section
+	// section is the original section node this TokenizedSection represents.
+	section *section.Section
 
-	// ContentTokens is the token count for this node's content only,
+	// contentTokens is the token count for this node's content only,
 	// excluding all descendants.
-	ContentTokens int
+	contentTokens int
 
-	// SubtreeTokens is the total token count for this node's content
+	// subtreeTokens is the total token count for this node's content
 	// plus all descendant contents combined.
-	SubtreeTokens int
+	subtreeTokens int
 
-	// Children contains the tokenized versions of all child sections,
+	// children contains the tokenized versions of all child sections,
 	// maintaining the same tree structure as the original Section tree.
-	Children []*TokenizedSection
+	children []*TokenizedSection
 }
 
 // NewTokenizedSection constructs a TokenizedSection node with the given values.
@@ -54,11 +56,49 @@ func NewTokenizedSection(
 	children []*TokenizedSection,
 ) *TokenizedSection {
 	return &TokenizedSection{
-		Section:       sec,
-		ContentTokens: contentTokens,
-		SubtreeTokens: subtreeTokens,
-		Children:      children,
+		section:       sec,
+		contentTokens: contentTokens,
+		subtreeTokens: subtreeTokens,
+		children:      children,
 	}
+}
+
+// GetSection returns the original section node this TokenizedSection represents.
+func (t *TokenizedSection) GetSection() *section.Section {
+	if t == nil {
+		return nil
+	}
+	return t.section
+}
+
+// GetContentTokens returns the token count for this node's content only,
+// excluding all descendants.
+func (t *TokenizedSection) GetContentTokens() int {
+	if t == nil {
+		return 0
+	}
+	return t.contentTokens
+}
+
+// GetSubtreeTokens returns the total token count for this node's content
+// plus all descendant contents combined.
+func (t *TokenizedSection) GetSubtreeTokens() int {
+	if t == nil {
+		return 0
+	}
+	return t.subtreeTokens
+}
+
+// GetChildren returns a copy of the tokenized child sections to prevent
+// external modification of the tree structure.
+func (t *TokenizedSection) GetChildren() []*TokenizedSection {
+	if t == nil {
+		return nil
+	}
+	// Return a copy to prevent modification
+	result := make([]*TokenizedSection, len(t.children))
+	copy(result, t.children)
+	return result
 }
 
 // Render concatenates this section's content with all descendant contents in
@@ -79,10 +119,10 @@ func (t *TokenizedSection) Render() string {
 	var b strings.Builder
 
 	// Local content first
-	b.WriteString(t.Section.Content())
+	b.WriteString(t.section.Content())
 
 	// Then recursive children in order
-	for _, c := range t.Children {
+	for _, c := range t.children {
 		if c != nil {
 			b.WriteString(c.Render())
 		}
