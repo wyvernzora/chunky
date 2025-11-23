@@ -166,7 +166,7 @@ func TestNew_CustomHeaderGenerator(t *testing.T) {
 
 	c, err := New(
 		WithChunkTokenBudget(1000),
-		WithChunkHeaderGenerator(customGen),
+		WithChunkHeader(customGen),
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

@@ -8,6 +8,7 @@ import (
 	cctx "github.com/wyvernzora/chunky/pkg/context"
 	fm "github.com/wyvernzora/chunky/pkg/frontmatter"
 	fmbuiltin "github.com/wyvernzora/chunky/pkg/frontmatter/builtin"
+	hbuiltin "github.com/wyvernzora/chunky/pkg/header/builtin"
 	pbuiltin "github.com/wyvernzora/chunky/pkg/parser/builtin"
 	"github.com/wyvernzora/chunky/pkg/section"
 	sbuiltin "github.com/wyvernzora/chunky/pkg/section/builtin"
@@ -148,7 +149,7 @@ func New(opts ...Option) (Chunker, error) {
 	}
 
 	if cfg.headerGenerator == nil {
-		cfg.headerGenerator = defaultHeaderGenerator
+		cfg.headerGenerator = hbuiltin.FrontMatterYamlHeader()
 	}
 
 	effectiveBudget := int(float64(cfg.chunkTokenBudget) * (1.0 - cfg.reservedOverheadRatio))

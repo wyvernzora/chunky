@@ -12,5 +12,6 @@ require (
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pkoukk/tiktoken-go v0.1.8 // indirect
+	github.com/sanity-io/litter v1.5.8 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

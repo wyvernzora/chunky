@@ -61,6 +61,30 @@
 //	    chunker.WithSectionTransform(myTransform),
 //	)
 //
+// # Chunk Headers
+//
+// The chunk header appears at the beginning of each chunk and typically
+// contains serialized frontmatter. Built-in generators are available:
+//
+//  1. builtin.DefaultHeaderGenerator(): YAML format (default)
+//  2. builtin.TemplateHeaderGenerator(): Custom text/template formatting
+//
+// Example with custom template:
+//
+//	import "github.com/wyvernzora/chunky/pkg/chunker/builtin"
+//
+//	tmpl, _ := template.New("header").Parse(`---
+//	title: {{ .FM.title }}
+//	path: {{ .FM.file_path }}
+//	---
+//	`)
+//	gen := builtin.TemplateHeaderGenerator(builtin.WithTemplate(tmpl))
+//
+//	chunker, err := chunker.New(
+//	    chunker.WithChunkTokenBudget(1000),
+//	    chunker.WithChunkHeaderGenerator(gen),
+//	)
+//
 // # Token Budget
 //
 // The token budget accounts for both chunk headers and body content:

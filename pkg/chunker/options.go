@@ -2,6 +2,7 @@ package chunker
 
 import (
 	fm "github.com/wyvernzora/chunky/pkg/frontmatter"
+	"github.com/wyvernzora/chunky/pkg/header"
 	"github.com/wyvernzora/chunky/pkg/parser"
 	"github.com/wyvernzora/chunky/pkg/section"
 	"github.com/wyvernzora/chunky/pkg/tokenizer"
@@ -16,7 +17,7 @@ type options struct {
 	reservedOverheadRatio float64
 	tokenizer             tokenizer.Tokenizer
 	parser                parser.Parser
-	headerGenerator       ChunkHeaderGenerator
+	headerGenerator       header.ChunkHeader
 	fmTransforms          []fm.Transform
 	sectionTransforms     []section.Transform
 }
@@ -91,7 +92,7 @@ func WithParser(p parser.Parser) Option {
 	}
 }
 
-// WithChunkHeaderGenerator sets a custom generator for chunk headers.
+// WithChunkHeader sets a custom generator for chunk headers.
 // If not provided, defaults to YAML frontmatter serialization.
 //
 // The header generator creates the text prepended to each chunk's body content,
@@ -110,9 +111,9 @@ func WithParser(p parser.Parser) Option {
 //
 //	chunker := New(
 //	    WithChunkTokenBudget(1000),
-//	    WithChunkHeaderGenerator(jsonGenerator),
+//	    WithChunkHeader(jsonGenerator),
 //	)
-func WithChunkHeaderGenerator(generator ChunkHeaderGenerator) Option {
+func WithChunkHeader(generator header.ChunkHeader) Option {
 	return func(opts *options) {
 		opts.headerGenerator = generator
 	}
